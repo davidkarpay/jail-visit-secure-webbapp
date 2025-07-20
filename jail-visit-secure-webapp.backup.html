@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jail Visit Logger - Secure Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --text-primary: #e4e4e4;
+            --text-secondary: #a0a0a0;
+            --accent-primary: #3b82f6;
+            --accent-success: #10b981;
+            --accent-danger: #ef4444;
+            --accent-warning: #f59e0b;
+            --border-color: #333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-form {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border-color);
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-danger);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Main App */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        .app-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .app-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .logout-button {
+            padding: 10px 20px;
+            background: var(--accent-danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-button:hover {
+            background: #dc2626;
+        }
+
+        .settings-section {
+            background: var(--bg-secondary);
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 1200px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .action-button {
+            padding: 20px;
+            border-radius: 12px;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .record-button {
+            background: var(--accent-primary);
+        }
+
+        .record-button:hover {
+            background: #2563eb;
+        }
+
+        .recording {
+            background: var(--accent-danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .manual-button {
+            background: var(--accent-success);
+        }
+
+        .manual-button:hover {
+            background: #059669;
+        }
+
+        .pdf-button {
+            background: var(--accent-warning);
+        }
+
+        .pdf-button:hover {
+            background: #d97706;
+        }
+
+        .transcription-box {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .visits-section {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .visits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .visit-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .visit-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .visit-date {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .client-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .visit-location {
+            font-size: 16px;
+            color: var(--accent-primary);
+            font-weight: 500;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: var(--text-primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .modal-button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .cancel-button {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .cancel-button:hover {
+            background: #333;
+        }
+
+        .save-button {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .save-button:hover {
+            background: #2563eb;
+        }
+
+        .delete-button {
+            background: var(--accent-danger);
+            color: white;
+        }
+
+        .delete-button:hover {
+            background: #dc2626;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .visits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <form class="login-form" onsubmit="handleLogin(event)">
+            <h1 class="login-title">Jail Visit Logger</h1>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" class="form-input" required autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" class="form-input" required autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="login-button">Login</button>
+        </form>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="mainApp">
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">Jail Visit Logger</h1>
+                <button class="logout-button" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div class="settings-section">
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label class="form-label" for="attorneyName">Attorney Name</label>
+                    <input type="text" id="attorneyName" class="form-input" placeholder="Enter attorney name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="courtDivision">Court Division</label>
+                    <input type="text" id="courtDivision" class="form-input" placeholder="Enter court division">
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="monthVisits">0</div>
+                <div class="stat-label">This Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalVisits">0</div>
+                <div class="stat-label">Total Visits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueClients">0</div>
+                <div class="stat-label">Unique Clients</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-button record-button" id="recordButton" onclick="toggleRecording()">
+                <span>🎤</span> Tap to Record Visit
+            </button>
+            <button class="action-button manual-button" onclick="showManualEntry()">
+                <span>➕</span> Manual Entry
+            </button>
+            <button class="action-button pdf-button" onclick="generatePDF()">
+                <span>📄</span> Generate Monthly PDF
+            </button>
+        </div>
+
+        <div id="transcriptionBox" class="transcription-box" style="display: none;">
+            <p id="transcriptionText"></p>
+        </div>
+
+        <div class="visits-section">
+            <div class="section-header">
+                <h2 class="section-title">Recent Visits</h2>
+            </div>
+            <div class="visits-grid" id="visitsList"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modalTitle">Add Visit</h2>
+            
+            <div class="form-group">
+                <label class="form-label" for="clientNameInput">Client Name</label>
+                <input type="text" id="clientNameInput" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="locationInput">Location (e.g., E-5-B)</label>
+                <input type="text" id="locationInput" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="dateInput">Date</label>
+                <input type="date" id="dateInput" class="form-input" required>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="modal-button cancel-button" onclick="closeModal()">Cancel</button>
+                <button class="modal-button save-button" onclick="saveVisit()">Save</button>
+                <button class="modal-button delete-button" id="deleteButton" onclick="deleteCurrentVisit()" style="display: none;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ SECURITY CONFIGURATION - REPLACE THESE WITH YOUR ACTUAL CREDENTIALS ⚠️
+        const AUTH_CONFIG = {
+            username: 'dkarpay',  // 🔐 CHANGE THIS
+            password: 'Reservedness5050-propjoe'  // 🔐 CHANGE THIS
+        };
+
+        // App State
+        let visits = [];
+        let isRecording = false;
+        let recognition = null;
+        let editingVisitId = null;
+        let isAuthenticated = false;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if already authenticated
+            const authToken = sessionStorage.getItem('authToken');
+            if (authToken === btoa(AUTH_CONFIG.username + ':' + AUTH_CONFIG.password)) {
+                showMainApp();
+            }
+
+            // Set today's date as default
+            document.getElementById('dateInput').valueAsDate = new Date();
+        });
+
+        // Authentication
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === AUTH_CONFIG.username && password === AUTH_CONFIG.password) {
+                sessionStorage.setItem('authToken', btoa(username + ':' + password));
+                showMainApp();
+            } else {
+                const errorDiv = document.getElementById('loginError');
+                errorDiv.textContent = 'Invalid username or password';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function showMainApp() {
+            isAuthenticated = true;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            
+            // Initialize app
+            loadData();
+            initializeSpeechRecognition();
+            updateStats();
+            
+            // Save settings on change
+            document.getElementById('attorneyName').addEventListener('change', saveSettings);
+            document.getElementById('courtDivision').addEventListener('change', saveSettings);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('authToken');
+            location.reload();
+        }
+
+        // Data Management
+        function loadData() {
+            visits = JSON.parse(localStorage.getItem('jailVisits') || '[]');
+            document.getElementById('attorneyName').value = localStorage.getItem('attorneyName') || '';
+            document.getElementById('courtDivision').value = localStorage.getItem('courtDivision') || '';
+            renderVisits();
+        }
+
+        function saveSettings() {
+            localStorage.setItem('attorneyName', document.getElementById('attorneyName').value);
+            localStorage.setItem('courtDivision', document.getElementById('courtDivision').value);
+        }
+
+        function saveVisits() {
+            localStorage.setItem('jailVisits', JSON.stringify(visits));
+            updateStats();
+        }
+
+        function updateStats() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const monthVisits = visits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
+            });
+
+            const uniqueClients = [...new Set(visits.map(v => v.clientName))].length;
+
+            document.getElementById('monthVisits').textContent = monthVisits.length;
+            document.getElementById('totalVisits').textContent = visits.length;
+            document.getElementById('uniqueClients').textContent = uniqueClients;
+        }
+
+        // Speech Recognition
+        function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('transcriptionText').textContent = transcript;
+                    document.getElementById('transcriptionBox').style.display = 'block';
+                    parseTranscription(transcript);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    stopRecording();
+                };
+                
+                recognition.onend = function() {
+                    stopRecording();
+                };
+            } else {
+                document.getElementById('recordButton').innerHTML = '<span>🎤</span> Voice not supported';
+                document.getElementById('recordButton').disabled = true;
+            }
+        }
+
+        function toggleRecording() {
+            if (!recognition) return;
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            isRecording = true;
+            const button = document.getElementById('recordButton');
+            button.innerHTML = '<span>🔴</span> Recording...';
+            button.classList.add('recording');
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            const button = document.getElementById('recordButton');
+            button.innerHTML = '<span>🎤</span> Tap to Record Visit';
+            button.classList.remove('recording');
+        }
+
+        function parseTranscription(text) {
+            const patterns = [
+                /visited\s+(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
+                /saw\s+(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
+                /(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
+            ];
+
+            let match = null;
+            for (const pattern of patterns) {
+                match = text.match(pattern);
+                if (match) break;
+            }
+
+            if (match) {
+                const clientName = match[1].trim();
+                const location = match[2].toUpperCase();
+                const date = new Date().toISOString();
+
+                const newVisit = {
+                    id: Date.now().toString(),
+                    clientName,
+                    location,
+                    date
+                };
+
+                visits.unshift(newVisit);
+                saveVisits();
+                renderVisits();
+                
+                setTimeout(() => {
+                    document.getElementById('transcriptionBox').style.display = 'none';
+                }, 3000);
+            } else {
+                alert('Could not parse. Try saying: "Visited [Name] at [Location]"');
+            }
+        }
+
+        // Visit Management
+        function showManualEntry(visitId = null) {
+            editingVisitId = visitId;
+            const modal = document.getElementById('modal');
+            const deleteButton = document.getElementById('deleteButton');
+            
+            if (visitId) {
+                const visit = visits.find(v => v.id === visitId);
+                document.getElementById('modalTitle').textContent = 'Edit Visit';
+                document.getElementById('clientNameInput').value = visit.clientName;
+                document.getElementById('locationInput').value = visit.location;
+                document.getElementById('dateInput').valueAsDate = new Date(visit.date);
+                deleteButton.style.display = 'block';
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Visit';
+                document.getElementById('clientNameInput').value = '';
+                document.getElementById('locationInput').value = '';
+                document.getElementById('dateInput').valueAsDate = new Date();
+                deleteButton.style.display = 'none';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            editingVisitId = null;
+        }
+
+        function saveVisit() {
+            const clientName = document.getElementById('clientNameInput').value.trim();
+            const location = document.getElementById('locationInput').value.trim().toUpperCase();
+            const date = document.getElementById('dateInput').value;
+
+            if (!clientName || !location || !date) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const visit = {
+                id: editingVisitId || Date.now().toString(),
+                clientName,
+                location,
+                date: new Date(date).toISOString()
+            };
+
+            if (editingVisitId) {
+                const index = visits.findIndex(v => v.id === editingVisitId);
+                visits[index] = visit;
+            } else {
+                visits.unshift(visit);
+            }
+
+            saveVisits();
+            renderVisits();
+            closeModal();
+        }
+
+        function deleteCurrentVisit() {
+            if (editingVisitId && confirm('Delete this visit?')) {
+                visits = visits.filter(v => v.id !== editingVisitId);
+                saveVisits();
+                renderVisits();
+                closeModal();
+            }
+        }
+
+        function renderVisits() {
+            const visitsList = document.getElementById('visitsList');
+            visitsList.innerHTML = '';
+            
+            // Show last 12 visits
+            const recentVisits = visits.slice(0, 12);
+            
+            recentVisits.forEach(visit => {
+                const visitCard = document.createElement('div');
+                visitCard.className = 'visit-card';
+                visitCard.onclick = () => showManualEntry(visit.id);
+                
+                const visitDate = new Date(visit.date);
+                const dateStr = visitDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                visitCard.innerHTML = `
+                    <div class="visit-date">${dateStr}</div>
+                    <div class="client-name">${visit.clientName}</div>
+                    <div class="visit-location">${visit.location}</div>
+                `;
+                
+                visitsList.appendChild(visitCard);
+            });
+        }
+
+        function generatePDF() {
+            const now = new Date();
+            const monthNames = ["January", "February", "March", "April", "May", "June", 
+                               "July", "August", "September", "October", "November", "December"];
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const monthVisits = visits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const attorneyName = document.getElementById('attorneyName').value || '_________________';
+            const courtDivision = document.getElementById('courtDivision').value || '_________________';
+
+            let tableRows = monthVisits.map(visit => {
+                const date = new Date(visit.date);
+                const dateStr = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+                return `
+                    <tr>
+                        <td>${dateStr}</td>
+                        <td>${visit.clientName}</td>
+                        <td>${visit.location}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Add empty rows
+            for (let i = monthVisits.length; i < 20; i++) {
+                tableRows += `
+                    <tr>
+                        <td>____/____</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                `;
+            }
+
+            const printContent = `
+                <style>
+                    @media print {
+                        body { 
+                            font-family: Arial, sans-serif; 
+                            margin: 0;
+                            padding: 40px;
+                            background: white;
+                            color: black;
+                        }
+                        h1 { 
+                            text-align: center; 
+                            text-decoration: underline;
+                            color: black;
+                            margin-bottom: 30px;
+                        }
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 20px; 
+                        }
+                        th, td { 
+                            border: 1px solid black; 
+                            padding: 8px; 
+                            text-align: left;
+                            color: black;
+                        }
+                        th { 
+                            font-weight: bold;
+                            background: #f0f0f0;
+                        }
+                        .header-info { 
+                            margin-bottom: 20px;
+                            color: black;
+                        }
+                        .header-info p {
+                            margin: 5px 0;
+                        }
+                        @page { 
+                            size: letter; 
+                            margin: 0.5in; 
+                        }
+                    }
+                </style>
+                <h1>Attorney Jail Visitation Log</h1>
+                <div class="header-info">
+                    <p>Attorney Name: ${attorneyName} / Month / Year : ${monthNames[currentMonth]} ${currentYear}</p>
+                    <p>Court Division: ${courtDivision}</p>
+                </div>
+                <table>
+                    <tr>
+                        <th style="width: 25%;">Date</th>
+                        <th style="width: 50%;">Client Name</th>
+                        <th style="width: 25%;">Location</th>
+                    </tr>
+                    ${tableRows}
+                </table>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Jail Visit Log - ${monthNames[currentMonth]} ${currentYear}</title>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+        }
+    </script>
+</body>
+</html>
