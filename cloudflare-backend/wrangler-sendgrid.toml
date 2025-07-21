@@ -16,18 +16,17 @@ binding = "SETTINGS"
 id = "9733724064cf452ba816404fd71981e1"
 
 # New KV namespaces for enhanced features
-# UPDATE THESE WITH YOUR ACTUAL KV NAMESPACE IDs
 [[kv_namespaces]]
 binding = "PENDING_USERS"
-id = "YOUR_PENDING_USERS_KV_ID"
+id = "01afca8caba04fde817b7b578bf82607"
 
 [[kv_namespaces]]
 binding = "LOGIN_PINS"
-id = "YOUR_LOGIN_PINS_KV_ID"
+id = "3349ff23eff24afbab1f7d786ea94b17"
 
 [[kv_namespaces]]
 binding = "RESET_CODES"
-id = "YOUR_RESET_CODES_KV_ID"
+id = "34fc339022bc4155b11e2d48aeaea13b"
 
 # Environment variables
 [vars]
@@ -35,7 +34,7 @@ JWT_SECRET = "karpay-jail-visit-secure-jwt-2024-production-key-7x9z"
 
 # SendGrid Configuration
 # Get API key from https://app.sendgrid.com/settings/api_keys
-SENDGRID_API_KEY = "YOUR_SENDGRID_API_KEY"
+SENDGRID_API_KEY = "SG.YOUR_ACTUAL_SENDGRID_API_KEY_HERE"
 
 # Email address to send from (must be verified in SendGrid)
-FROM_EMAIL = "noreply@yourdomain.com"
+FROM_EMAIL = "david@karpaylegal.com"
