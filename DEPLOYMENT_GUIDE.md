@@ -35,9 +35,9 @@ You need to create three KV namespaces for storing data:
 3. Click on "Workers & Pages" in the left sidebar
 4. Click on "KV" under "Storage"
 5. Create three namespaces:
-   - Name: `jail-visit-users` (for user accounts)
-   - Name: `jail-visit-visits` (for visit data)
-   - Name: `jail-visit-settings` (for user settings)
+   - Name: `jail-visit-users` (for user accounts) (8b4c5fbf58864eea86bcc354de7a640f)
+   - Name: `jail-visit-visits` (for visit data) (6bccdfc1b2d14c5dae6a1e6d2f19b37c)
+   - Name: `jail-visit-settings` (for user settings) (efdb659f036d4b848c4db7bceef311ef)
 6. Copy the ID of each namespace (you'll need these)
 
 ### Option B: Using Wrangler CLI
@@ -45,13 +45,18 @@ You need to create three KV namespaces for storing data:
 ```bash
 cd cloudflare-backend
 
-# Create namespaces
-wrangler kv:namespace create "USERS"
-wrangler kv:namespace create "VISITS"
-wrangler kv:namespace create "SETTINGS"
+# Create namespaces (updated syntax for newer Wrangler versions)
+wrangler kv namespace create "USERS"
+wrangler kv namespace create "VISITS"
+wrangler kv namespace create "SETTINGS"
 ```
 
 Copy the IDs that are output from these commands.
+
+**Your created namespace IDs:**
+- USERS: `cf359fa838de461b90d015512bc67051`
+- VISITS: `962bffb03dcc4491b1c0ef9c76141c7a`
+- SETTINGS: `9733724064cf452ba816404fd71981e1`
 
 ## Step 4: Update Configuration
 
