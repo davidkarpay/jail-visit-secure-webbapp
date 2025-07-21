@@ -335,6 +335,82 @@ If you didn't create this account, please ignore this email.`;
         });
       }
 
+      // Migration endpoint: Add email to existing user
+      if (path === '/api/add-email' && request.method === 'POST') {
+        const { username, password, email } = await request.json();
+        
+        if (!username || !password || !email) {
+          return new Response(JSON.stringify({ error: 'Username, password, and email required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        // Verify user exists and password is correct
+        const userStr = await env.USERS.get(`user:${username}`);
+        if (!userStr) {
+          return new Response(JSON.stringify({ error: 'User not found' }), {
+            status: 404,
+            headers: corsHeaders
+          });
+        }
+
+        const user = JSON.parse(userStr);
+        
+        // Verify password
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        if (user.passwordHash !== hashHex) {
+          return new Response(JSON.stringify({ error: 'Invalid password' }), {
+            status: 401,
+            headers: corsHeaders
+          });
+        }
+
+        // Add email to user record
+        user.email = email;
+        user.isVerified = false; // They'll need to verify the new email
+        
+        // Save updated user
+        await env.USERS.put(`user:${username}`, JSON.stringify(user));
+
+        // Generate verification code
+        const verificationCode = generatePIN();
+        const expiry = Date.now() + (10 * 60 * 1000); // 10 minutes
+        
+        await env.PENDING_USERS.put(`verify:${username}`, JSON.stringify({
+          code: verificationCode,
+          email: email,
+          expiry: expiry
+        }));
+
+        // Send verification email
+        const emailSent = await sendEmail(
+          email,
+          'Verify Your Email - Jail Visit Logger',
+          `Your verification code is: ${verificationCode}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
+          env
+        );
+
+        if (!emailSent) {
+          return new Response(JSON.stringify({ error: 'Failed to send verification email' }), {
+            status: 500,
+            headers: corsHeaders
+          });
+        }
+
+        return new Response(JSON.stringify({ 
+          message: 'Email added to your account. Please check your email for a verification code.',
+          requiresVerification: true
+        }), {
+          headers: corsHeaders
+        });
+      }
+
       // Request PIN login
       if (path === '/api/request-pin' && request.method === 'POST') {
         const { username } = await request.json();

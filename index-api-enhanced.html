@@ -612,6 +612,7 @@
                 </button>
 
                 <a class="auth-link" onclick="showForgotPassword()">Forgot your password?</a>
+                <a class="auth-link" onclick="showAddEmail()" style="color: #f59e0b;">Add email to existing account</a>
             </div>
 
             <!-- Register Form -->
@@ -711,6 +712,35 @@
                         Reset Password
                     </button>
                 </div>
+
+                <a class="auth-link" onclick="backToLogin()">Back to Login</a>
+            </div>
+
+            <!-- Add Email Form (Migration) -->
+            <div id="addEmailForm" style="display: none;">
+                <h3 class="auth-subtitle">Add Email to Existing Account</h3>
+                <p class="info-message">
+                    If you created your account before email verification was added, you can add your email here to enable PIN login and password reset.
+                </p>
+
+                <form onsubmit="handleAddEmail(event)">
+                    <div class="form-group">
+                        <label class="form-label" for="migrateUsername">Username</label>
+                        <input type="text" id="migrateUsername" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="migratePassword">Current Password</label>
+                        <input type="password" id="migratePassword" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="migrateEmail">Email Address</label>
+                        <input type="email" id="migrateEmail" class="form-input" required placeholder="Enter your email address">
+                    </div>
+
+                    <button type="submit" class="auth-button">Add Email & Send Verification</button>
+                </form>
 
                 <a class="auth-link" onclick="backToLogin()">Back to Login</a>
             </div>
@@ -978,6 +1008,7 @@
             document.getElementById('pinForm').style.display = 'none';
             document.getElementById('verificationForm').style.display = 'none';
             document.getElementById('forgotPasswordForm').style.display = 'none';
+            document.getElementById('addEmailForm').style.display = 'none';
         }
 
         function updateAuthTabs(activeTab) {
@@ -1022,6 +1053,13 @@
             hideAllAuthForms();
             updateAuthTabs('');
             document.getElementById('forgotPasswordForm').style.display = 'block';
+        }
+
+        function showAddEmail() {
+            clearMessages();
+            hideAllAuthForms();
+            updateAuthTabs('');
+            document.getElementById('addEmailForm').style.display = 'block';
         }
 
         function showQuickPin() {
@@ -1074,6 +1112,37 @@
                 pendingUsername = username;
                 showMessage(result.message, 'success');
                 showVerificationForm();
+            } catch (error) {
+                showMessage(error.message, 'error');
+            }
+        }
+
+        async function handleAddEmail(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('migrateUsername').value;
+            const password = document.getElementById('migratePassword').value;
+            const email = document.getElementById('migrateEmail').value.trim();
+            
+            if (!username || !password || !email) {
+                showMessage('All fields are required.', 'error');
+                return;
+            }
+            
+            try {
+                const result = await API.request('/api/add-email', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password, email })
+                });
+                
+                if (result.requiresVerification) {
+                    pendingUsername = username;
+                    showMessage(result.message, 'success');
+                    showVerificationForm();
+                } else {
+                    showMessage(result.message, 'success');
+                    setTimeout(() => backToLogin(), 2000);
+                }
             } catch (error) {
                 showMessage(error.message, 'error');
             }
