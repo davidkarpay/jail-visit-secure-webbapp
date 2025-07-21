@@ -629,16 +629,11 @@
 
                     <div class="form-group">
                         <label class="form-label" for="regEmail">Email Address</label>
-                        <input type="email" id="regEmail" class="form-input" placeholder="Optional">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="regPhone">Phone Number</label>
-                        <input type="tel" id="regPhone" class="form-input" placeholder="Optional (for SMS)">
+                        <input type="email" id="regEmail" class="form-input" required placeholder="Enter your email address">
                     </div>
 
                     <div class="info-message">
-                        Provide either email or phone number for account verification and password recovery.
+                        Your email address will be used for account verification and password recovery.
                     </div>
                     
                     <button type="submit" class="auth-button">Create Account</button>
@@ -829,7 +824,7 @@
 
     <script>
         // API Configuration
-        const API_URL = 'https://jail-visit-api-enhanced.dlkarpay.workers.dev'; // Update this
+        const API_URL = 'https://jail-visit-api-enhanced.dlkarpay.workers.dev'; // Update this after deployment
         let authToken = null;
         let currentUserId = null;
         let pendingUsername = null; // For verification flow
@@ -868,10 +863,10 @@
                 return data;
             },
 
-            async register(username, password, email, phone) {
+            async register(username, password, email) {
                 return await this.request('/api/register', {
                     method: 'POST',
-                    body: JSON.stringify({ username, password, email, phone })
+                    body: JSON.stringify({ username, password, email })
                 });
             },
 
@@ -1068,15 +1063,14 @@
             const username = document.getElementById('regUsername').value;
             const password = document.getElementById('regPassword').value;
             const email = document.getElementById('regEmail').value.trim();
-            const phone = document.getElementById('regPhone').value.trim();
             
-            if (!email && !phone) {
-                showMessage('Please provide either an email address or phone number for verification.', 'error');
+            if (!email) {
+                showMessage('Please provide an email address for verification.', 'error');
                 return;
             }
             
             try {
-                const result = await API.register(username, password, email || null, phone || null);
+                const result = await API.register(username, password, email);
                 pendingUsername = username;
                 showMessage(result.message, 'success');
                 showVerificationForm();

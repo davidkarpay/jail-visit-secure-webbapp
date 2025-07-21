@@ -1,0 +1,41 @@
+name = "jail-visit-api-enhanced"
+main = "worker-email-only.js"
+compatibility_date = "2024-01-01"
+
+# Existing KV Namespaces
+[[kv_namespaces]]
+binding = "USERS"
+id = "cf359fa838de461b90d015512bc67051"
+
+[[kv_namespaces]]
+binding = "VISITS"
+id = "962bffb03dcc4491b1c0ef9c76141c7a"
+
+[[kv_namespaces]]
+binding = "SETTINGS"
+id = "9733724064cf452ba816404fd71981e1"
+
+# New KV namespaces for enhanced features
+# UPDATE THESE WITH YOUR ACTUAL KV NAMESPACE IDs
+[[kv_namespaces]]
+binding = "PENDING_USERS"
+id = "YOUR_PENDING_USERS_KV_ID"
+
+[[kv_namespaces]]
+binding = "LOGIN_PINS"
+id = "YOUR_LOGIN_PINS_KV_ID"
+
+[[kv_namespaces]]
+binding = "RESET_CODES"
+id = "YOUR_RESET_CODES_KV_ID"
+
+# Environment variables
+[vars]
+JWT_SECRET = "karpay-jail-visit-secure-jwt-2024-production-key-7x9z"
+
+# SendGrid Configuration
+# Get API key from https://app.sendgrid.com/settings/api_keys
+SENDGRID_API_KEY = "YOUR_SENDGRID_API_KEY"
+
+# Email address to send from (must be verified in SendGrid)
+FROM_EMAIL = "noreply@yourdomain.com"
