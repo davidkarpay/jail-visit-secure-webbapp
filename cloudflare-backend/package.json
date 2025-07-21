@@ -1,0 +1,17 @@
+{
+  "name": "jail-visit-api",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker API for Jail Visit Logger",
+  "main": "worker.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "keywords": ["cloudflare-workers", "jail-visit-logger"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

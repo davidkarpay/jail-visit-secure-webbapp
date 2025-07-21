@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jail Visit Logger - Secure Access</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #252525;
+            --text-primary: #e4e4e4;
+            --text-secondary: #a0a0a0;
+            --accent-primary: #3b82f6;
+            --accent-success: #10b981;
+            --accent-danger: #ef4444;
+            --accent-warning: #f59e0b;
+            --border-color: #333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Security Warning Banner */
+        .security-warning {
+            background: var(--accent-warning);
+            color: #000;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Login Screen */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-form {
+            background: var(--bg-secondary);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-title {
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--accent-danger);
+            color: var(--accent-danger);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--accent-success);
+            color: var(--accent-success);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Main App */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        .app-header {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .logout-button, .clear-data-button {
+            padding: 10px 20px;
+            background: var(--accent-danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .clear-data-button {
+            background: var(--accent-warning);
+        }
+
+        .logout-button:hover {
+            background: #dc2626;
+        }
+
+        .clear-data-button:hover {
+            background: #d97706;
+        }
+
+        .settings-section {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .action-button {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .record-button {
+            border-color: var(--accent-danger);
+        }
+
+        .record-button.recording {
+            background: var(--accent-danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .manual-button {
+            border-color: var(--accent-primary);
+        }
+
+        .pdf-button {
+            border-color: var(--accent-success);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .close-button:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row.single {
+            grid-template-columns: 1fr;
+        }
+
+        .save-button {
+            margin-top: 20px;
+            padding: 14px 28px;
+            background: var(--accent-success);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .save-button:hover {
+            background: #059669;
+        }
+
+        .delete-button {
+            margin-top: 20px;
+            margin-left: 10px;
+            padding: 14px 28px;
+            background: var(--accent-danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .delete-button:hover {
+            background: #dc2626;
+        }
+
+        /* Transcription Box */
+        .transcription-box {
+            display: none;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+
+        .transcription-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .transcription-text {
+            font-size: 16px;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Visits List */
+        .visits-section {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .visits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .visit-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .visit-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent-primary);
+        }
+
+        .visit-date {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .client-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .visit-location {
+            font-size: 14px;
+            color: var(--accent-primary);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Inactivity Timer */
+        .inactivity-warning {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-warning);
+            color: #000;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: none;
+            z-index: 2000;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .visits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .print-content, .print-content * {
+                visibility: visible;
+            }
+            .print-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Security Warning -->
+    <div class="security-warning" id="securityWarning">
+        ⚠️ Security Notice: This application stores data locally in your browser. Use on trusted devices only.
+    </div>
+
+    <!-- Inactivity Warning -->
+    <div class="inactivity-warning" id="inactivityWarning">
+        You will be logged out in 30 seconds due to inactivity...
+    </div>
+
+    <!-- Login Screen -->
+    <div class="login-container" id="loginScreen">
+        <form class="login-form" onsubmit="handleLogin(event)">
+            <h1 class="login-title">Jail Visit Logger</h1>
+            <div id="loginError" class="error-message" style="display: none;"></div>
+            <div id="firstTimeMessage" class="success-message" style="display: none;">
+                Welcome! Please register with a username and password.
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" class="form-input" required autocomplete="username">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" class="form-input" required autocomplete="current-password">
+            </div>
+            
+            <button type="submit" class="login-button">Login</button>
+        </form>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container" id="mainApp">
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">Jail Visit Logger</h1>
+                <div class="header-buttons">
+                    <button class="clear-data-button" onclick="confirmClearData()">Clear All Data</button>
+                    <button class="logout-button" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="settings-section">
+            <div class="settings-grid">
+                <div class="form-group">
+                    <label class="form-label" for="attorneyName">Attorney Name</label>
+                    <input type="text" id="attorneyName" class="form-input" placeholder="Enter attorney name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="courtDivision">Court Division</label>
+                    <input type="text" id="courtDivision" class="form-input" placeholder="Enter court division">
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="monthVisits">0</div>
+                <div class="stat-label">This Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalVisits">0</div>
+                <div class="stat-label">Total Visits</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="uniqueClients">0</div>
+                <div class="stat-label">Unique Clients</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-button record-button" id="recordButton" onclick="toggleRecording()">
+                <span>🎤</span> Tap to Record Visit
+            </button>
+            <button class="action-button manual-button" onclick="showManualEntry()">
+                <span>➕</span> Manual Entry
+            </button>
+            <button class="action-button pdf-button" onclick="generatePDF()">
+                <span>📄</span> Generate Monthly PDF
+            </button>
+        </div>
+
+        <div class="transcription-box" id="transcriptionBox">
+            <div class="transcription-label">Transcription:</div>
+            <div class="transcription-text" id="transcriptionText"></div>
+        </div>
+
+        <div class="visits-section">
+            <h2 class="section-title">Recent Visits</h2>
+            <div class="visits-grid" id="visitsList"></div>
+        </div>
+    </div>
+
+    <!-- Manual Entry Modal -->
+    <div class="modal" id="manualEntryModal">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeModal()">&times;</button>
+            <h2 class="modal-title" id="modalTitle">Add Visit</h2>
+            
+            <form onsubmit="saveVisit(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="dateInput">Date</label>
+                        <input type="date" id="dateInput" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="timeInput">Time</label>
+                        <input type="time" id="timeInput" class="form-input" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="clientName">Client Name</label>
+                        <input type="text" id="clientName" class="form-input" placeholder="Enter client name" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="location">Location (Pod)</label>
+                        <input type="text" id="location" class="form-input" placeholder="e.g., A-32-B" pattern="[A-Z]-\d+-[A-Z]" title="Format: A-32-B" required>
+                    </div>
+                </div>
+                
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label" for="notes">Notes</label>
+                        <textarea id="notes" class="form-input" rows="4" placeholder="Enter any additional notes"></textarea>
+                    </div>
+                </div>
+                
+                <button type="submit" class="save-button">Save Visit</button>
+                <button type="button" class="delete-button" id="deleteButton" onclick="deleteVisit()" style="display: none;">Delete Visit</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_URL = 'https://jail-visit-api.YOUR-SUBDOMAIN.workers.dev'; // UPDATE THIS
+        let authToken = null;
+        let currentUserId = null;
+
+        // API Module
+        const API = {
+            async request(endpoint, options = {}) {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+                
+                if (authToken && !endpoint.includes('/login') && !endpoint.includes('/register')) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+                
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    ...options,
+                    headers
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'API request failed');
+                }
+                
+                return data;
+            },
+
+            async register(username, password) {
+                const result = await this.request('/api/register', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                authToken = result.token;
+                currentUserId = result.userId;
+                sessionStorage.setItem('authToken', authToken);
+                sessionStorage.setItem('userId', currentUserId);
+                
+                return result;
+            },
+
+            async login(username, password) {
+                const result = await this.request('/api/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                authToken = result.token;
+                currentUserId = result.userId;
+                sessionStorage.setItem('authToken', authToken);
+                sessionStorage.setItem('userId', currentUserId);
+                
+                return result;
+            },
+
+            async getVisits() {
+                return await this.request('/api/visits');
+            },
+
+            async saveVisit(visit) {
+                return await this.request('/api/visits', {
+                    method: 'POST',
+                    body: JSON.stringify(visit)
+                });
+            },
+
+            async updateVisit(id, visit) {
+                return await this.request(`/api/visits/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(visit)
+                });
+            },
+
+            async deleteVisit(id) {
+                return await this.request(`/api/visits/${id}`, {
+                    method: 'DELETE'
+                });
+            },
+
+            async getSettings() {
+                return await this.request('/api/settings');
+            },
+
+            async saveSettings(settings) {
+                return await this.request('/api/settings', {
+                    method: 'PUT',
+                    body: JSON.stringify(settings)
+                });
+            }
+        };
+
+        // App State
+        let visits = [];
+        let isRecording = false;
+        let recognition = null;
+        let editingVisitId = null;
+        let isAuthenticated = false;
+        let inactivityTimer = null;
+        let warningTimer = null;
+
+        // Inactivity timeout settings
+        const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+        const WARNING_TIMEOUT = 30 * 1000; // 30 seconds warning
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Register Service Worker for enhanced security and offline support
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('Service Worker registered:', registration);
+                } catch (error) {
+                    console.error('Service Worker registration failed:', error);
+                }
+            }
+
+            // Check for existing session
+            authToken = sessionStorage.getItem('authToken');
+            currentUserId = sessionStorage.getItem('userId');
+            
+            if (authToken && currentUserId) {
+                // Verify token is still valid by making a test request
+                try {
+                    await API.getVisits();
+                    showMainApp();
+                } catch (e) {
+                    // Token invalid, clear and show login
+                    sessionStorage.removeItem('authToken');
+                    sessionStorage.removeItem('userId');
+                    authToken = null;
+                    currentUserId = null;
+                }
+            }
+
+            // Set today's date as default
+            document.getElementById('dateInput').valueAsDate = new Date();
+            
+            // Setup activity tracking
+            ['click', 'keypress', 'scroll', 'mousemove'].forEach(event => {
+                document.addEventListener(event, resetInactivityTimer);
+            });
+        });
+
+        // Inactivity Management
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            clearTimeout(warningTimer);
+            document.getElementById('inactivityWarning').style.display = 'none';
+            
+            if (isAuthenticated) {
+                inactivityTimer = setTimeout(() => {
+                    document.getElementById('inactivityWarning').style.display = 'block';
+                    warningTimer = setTimeout(() => {
+                        logout();
+                    }, WARNING_TIMEOUT);
+                }, INACTIVITY_TIMEOUT - WARNING_TIMEOUT);
+            }
+        }
+
+        // Authentication
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            try {
+                // Try to login first
+                await API.login(username, password);
+                showMainApp();
+            } catch (loginError) {
+                // If login fails, try to register (new user)
+                try {
+                    await API.register(username, password);
+                    showMainApp();
+                } catch (registerError) {
+                    // Both failed - show error
+                    errorDiv.textContent = loginError.message || 'Invalid username or password';
+                    errorDiv.style.display = 'block';
+                }
+            }
+        }
+
+        async function showMainApp() {
+            isAuthenticated = true;
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            
+            // Initialize app
+            await loadData();
+            initializeSpeechRecognition();
+            updateStats();
+            resetInactivityTimer();
+            
+            // Save settings on change
+            document.getElementById('attorneyName').addEventListener('change', saveSettings);
+            document.getElementById('courtDivision').addEventListener('change', saveSettings);
+        }
+
+        function logout() {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('userId');
+            authToken = null;
+            currentUserId = null;
+            location.reload();
+        }
+
+        function confirmClearData() {
+            if (confirm('⚠️ WARNING: This will permanently delete ALL visit data and settings. This cannot be undone. Are you sure?')) {
+                if (confirm('This is your last chance. Do you really want to delete everything?')) {
+                    clearAllData();
+                }
+            }
+        }
+
+        async function clearAllData() {
+            try {
+                // Delete all visits one by one (API doesn't have bulk delete)
+                for (const visit of visits) {
+                    await API.deleteVisit(visit.id);
+                }
+                
+                // Clear settings
+                await API.saveSettings({ attorneyName: '', courtDivision: '' });
+                
+                // Reload data
+                visits = [];
+                renderVisits();
+                updateStats();
+                document.getElementById('attorneyName').value = '';
+                document.getElementById('courtDivision').value = '';
+                
+                alert('All data has been cleared successfully.');
+            } catch (e) {
+                console.error('Failed to clear data:', e);
+                alert('Failed to clear all data. Please try again.');
+            }
+        }
+
+        // Data Management
+        async function loadData() {
+            try {
+                // Load visits from API
+                visits = await API.getVisits();
+                
+                // Load settings from API
+                const settings = await API.getSettings();
+                document.getElementById('attorneyName').value = settings.attorneyName || '';
+                document.getElementById('courtDivision').value = settings.courtDivision || '';
+                
+                renderVisits();
+            } catch (e) {
+                console.error('Failed to load data:', e);
+                visits = [];
+            }
+        }
+
+        async function saveSettings() {
+            try {
+                await API.saveSettings({
+                    attorneyName: document.getElementById('attorneyName').value,
+                    courtDivision: document.getElementById('courtDivision').value
+                });
+            } catch (e) {
+                console.error('Failed to save settings:', e);
+            }
+        }
+
+        async function saveVisits() {
+            // With API, visits are saved individually when created/updated
+            // This function now just updates stats
+            updateStats();
+        }
+
+        function updateStats() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const monthVisits = visits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
+            });
+
+            const uniqueClients = [...new Set(visits.map(v => v.clientName))].length;
+
+            document.getElementById('monthVisits').textContent = monthVisits.length;
+            document.getElementById('totalVisits').textContent = visits.length;
+            document.getElementById('uniqueClients').textContent = uniqueClients;
+        }
+
+        // Speech Recognition
+        function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('transcriptionText').textContent = transcript;
+                    document.getElementById('transcriptionBox').style.display = 'block';
+                    parseTranscription(transcript);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    stopRecording();
+                };
+                
+                recognition.onend = function() {
+                    stopRecording();
+                };
+            } else {
+                document.getElementById('recordButton').innerHTML = '<span>🎤</span> Voice not supported';
+                document.getElementById('recordButton').disabled = true;
+            }
+        }
+
+        function toggleRecording() {
+            if (!recognition) return;
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                startRecording();
+            }
+        }
+
+        function startRecording() {
+            isRecording = true;
+            const button = document.getElementById('recordButton');
+            button.innerHTML = '<span>🔴</span> Recording...';
+            button.classList.add('recording');
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            const button = document.getElementById('recordButton');
+            button.innerHTML = '<span>🎤</span> Tap to Record Visit';
+            button.classList.remove('recording');
+        }
+
+        async function parseTranscription(text) {
+            const patterns = [
+                /visited\s+(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
+                /saw\s+(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
+                /met\s+(?:with\s+)?(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
+                /(.+?)\s+(?:in|at|pod)\s+([A-Z]-\d+-[A-Z])/i
+            ];
+
+            let clientName = '';
+            let location = '';
+
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match) {
+                    clientName = match[1].trim();
+                    location = match[2].toUpperCase();
+                    break;
+                }
+            }
+
+            if (clientName && location) {
+                // Auto-create visit
+                const visitData = {
+                    date: new Date().toISOString(),
+                    clientName: clientName,
+                    location: location,
+                    notes: `Recorded via voice: "${text}"`
+                };
+
+                try {
+                    const newVisit = await API.saveVisit(visitData);
+                    visits.unshift(newVisit);
+                    updateStats();
+                    renderVisits();
+                    
+                    // Show success feedback
+                    setTimeout(() => {
+                        document.getElementById('transcriptionBox').style.display = 'none';
+                    }, 3000);
+                } catch (e) {
+                    console.error('Failed to save voice visit:', e);
+                    // Show manual entry form on error
+                    showManualEntry();
+                    document.getElementById('clientName').value = clientName;
+                    document.getElementById('location').value = location;
+                    document.getElementById('notes').value = `Voice note: "${text}"`;
+                }
+            } else {
+                // Show manual entry form with partial data
+                showManualEntry();
+                if (clientName) document.getElementById('clientName').value = clientName;
+                if (location) document.getElementById('location').value = location;
+                document.getElementById('notes').value = `Voice note: "${text}"`;
+            }
+        }
+
+        // Manual Entry
+        function showManualEntry(visitId = null) {
+            editingVisitId = visitId;
+            const modal = document.getElementById('manualEntryModal');
+            const form = modal.querySelector('form');
+            
+            if (visitId) {
+                const visit = visits.find(v => v.id === visitId);
+                if (visit) {
+                    document.getElementById('modalTitle').textContent = 'Edit Visit';
+                    document.getElementById('dateInput').value = visit.date.split('T')[0];
+                    document.getElementById('timeInput').value = visit.date.split('T')[1].substring(0, 5);
+                    document.getElementById('clientName').value = visit.clientName;
+                    document.getElementById('location').value = visit.location;
+                    document.getElementById('notes').value = visit.notes || '';
+                    document.getElementById('deleteButton').style.display = 'inline-block';
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Add Visit';
+                form.reset();
+                document.getElementById('dateInput').valueAsDate = new Date();
+                document.getElementById('timeInput').value = new Date().toTimeString().substring(0, 5);
+                document.getElementById('deleteButton').style.display = 'none';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('manualEntryModal').style.display = 'none';
+            editingVisitId = null;
+        }
+
+        async function saveVisit(event) {
+            event.preventDefault();
+            
+            const date = document.getElementById('dateInput').value;
+            const time = document.getElementById('timeInput').value;
+            const visitData = {
+                date: new Date(`${date}T${time}`).toISOString(),
+                clientName: document.getElementById('clientName').value.trim(),
+                location: document.getElementById('location').value.toUpperCase(),
+                notes: document.getElementById('notes').value.trim()
+            };
+
+            try {
+                if (editingVisitId) {
+                    // Update existing visit
+                    const updatedVisit = await API.updateVisit(editingVisitId, visitData);
+                    const index = visits.findIndex(v => v.id === editingVisitId);
+                    if (index !== -1) {
+                        visits[index] = updatedVisit;
+                    }
+                } else {
+                    // Create new visit
+                    const newVisit = await API.saveVisit(visitData);
+                    visits.unshift(newVisit);
+                }
+
+                updateStats();
+                renderVisits();
+                closeModal();
+            } catch (e) {
+                console.error('Failed to save visit:', e);
+                alert('Failed to save visit. Please try again.');
+            }
+        }
+
+        async function deleteVisit() {
+            if (!editingVisitId) return;
+            
+            if (confirm('Are you sure you want to delete this visit?')) {
+                try {
+                    await API.deleteVisit(editingVisitId);
+                    visits = visits.filter(v => v.id !== editingVisitId);
+                    updateStats();
+                    renderVisits();
+                    closeModal();
+                } catch (e) {
+                    console.error('Failed to delete visit:', e);
+                    alert('Failed to delete visit. Please try again.');
+                }
+            }
+        }
+
+        function renderVisits() {
+            const visitsList = document.getElementById('visitsList');
+            visitsList.innerHTML = '';
+            
+            // Show last 12 visits
+            const recentVisits = visits.slice(0, 12);
+            
+            recentVisits.forEach(visit => {
+                const visitCard = document.createElement('div');
+                visitCard.className = 'visit-card';
+                visitCard.onclick = () => showManualEntry(visit.id);
+                
+                const visitDate = new Date(visit.date);
+                const dateStr = visitDate.toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+                
+                visitCard.innerHTML = `
+                    <div class="visit-date">${dateStr}</div>
+                    <div class="client-name">${visit.clientName}</div>
+                    <div class="visit-location">${visit.location}</div>
+                `;
+                
+                visitsList.appendChild(visitCard);
+            });
+        }
+
+        function generatePDF() {
+            const now = new Date();
+            const monthNames = ["January", "February", "March", "April", "May", "June", 
+                               "July", "August", "September", "October", "November", "December"];
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const monthVisits = visits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const attorneyName = document.getElementById('attorneyName').value || '_________________';
+            const courtDivision = document.getElementById('courtDivision').value || '_________________';
+
+            let tableRows = monthVisits.map(visit => {
+                const date = new Date(visit.date);
+                const dateStr = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+                return `
+                    <tr>
+                        <td>${dateStr}</td>
+                        <td>${visit.clientName}</td>
+                        <td>${visit.location}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // Add empty rows
+            for (let i = monthVisits.length; i < 20; i++) {
+                tableRows += `
+                    <tr>
+                        <td>____/____</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                `;
+            }
+
+            const printContent = `
+                <div class="print-content">
+                    <style>
+                        @media print {
+                            body { 
+                                font-family: Arial, sans-serif; 
+                                margin: 0;
+                                padding: 40px;
+                                background: white;
+                                color: black;
+                            }
+                            h1 { 
+                                text-align: center; 
+                                text-decoration: underline;
+                                color: black;
+                                margin-bottom: 30px;
+                            }
+                            table { 
+                                width: 100%; 
+                                border-collapse: collapse; 
+                                margin-top: 20px; 
+                            }
+                            th, td { 
+                                border: 1px solid black; 
+                                padding: 8px; 
+                                text-align: left;
+                                color: black;
+                            }
+                            th { 
+                                font-weight: bold;
+                                background: #f0f0f0;
+                            }
+                            .header-info { 
+                                margin-bottom: 20px;
+                                color: black;
+                            }
+                            .signature-line {
+                                margin-top: 40px;
+                                border-bottom: 1px solid black;
+                                width: 300px;
+                            }
+                        }
+                    </style>
+                    <h1>Jail Visit Log - ${monthNames[currentMonth]} ${currentYear}</h1>
+                    <div class="header-info">
+                        <p><strong>Attorney:</strong> ${attorneyName}</p>
+                        <p><strong>Court Division:</strong> ${courtDivision}</p>
+                        <p><strong>Total Visits This Month:</strong> ${monthVisits.length}</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Client Name</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                    <div class="signature-line"></div>
+                    <p style="margin-top: 10px;">Signature</p>
+                </div>
+            `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Jail Visit Log - ${monthNames[currentMonth]} ${currentYear}</title>
+                </head>
+                <body>
+                    ${printContent}
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.print();
+                printWindow.onafterprint = function() {
+                    printWindow.close();
+                };
+            };
+        }
+
+        // Modal close on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('manualEntryModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

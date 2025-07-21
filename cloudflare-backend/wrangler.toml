@@ -1,0 +1,21 @@
+name = "jail-visit-api"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespaces
+# You'll need to create these in Cloudflare dashboard and update the IDs
+[[kv_namespaces]]
+binding = "USERS"
+id = "YOUR_USERS_KV_ID"
+
+[[kv_namespaces]]
+binding = "VISITS"
+id = "YOUR_VISITS_KV_ID"
+
+[[kv_namespaces]]
+binding = "SETTINGS"
+id = "YOUR_SETTINGS_KV_ID"
+
+# Environment variables
+[vars]
+JWT_SECRET = "your-secret-jwt-key-change-this"
