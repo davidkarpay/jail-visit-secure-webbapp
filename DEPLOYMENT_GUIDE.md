@@ -92,7 +92,7 @@ wrangler deploy
 ```
 
 This will output your Worker URL, something like:
-`https://jail-visit-api.YOUR-SUBDOMAIN.workers.dev`
+`https://jail-visit-api.YOUR-SUBDOMAIN.workers.dev` # -- https://jail-visit-api.dlkarpay.workers.dev
 
 Copy this URL - you'll need it for the frontend.
 
@@ -117,7 +117,7 @@ git push
 ```
 
 Your site should update automatically at:
-https://davidkarpay.github.io/jail-visit-secure-webbapp/
+https://jailvisit.karpaylegal.com/
 
 ## Step 8: Test the Deployment
 
@@ -171,3 +171,7 @@ If you encounter issues:
 1. Check Worker logs in Cloudflare dashboard
 2. Use browser developer tools to inspect API calls
 3. Verify all configuration values are correct
+
+jail-visit-pending-users -- 01afca8caba04fde817b7b578bf82607
+jail-visit-login-pins -- 3349ff23eff24afbab1f7d786ea94b17
+jail-visit-reset-codes -- 34fc339022bc4155b11e2d48aeaea13b
