@@ -1201,6 +1201,15 @@
                 return;
             }
             
+            // Validate email domain
+            const allowedDomains = ['@pd15.org', '@pd15.state.fl.us'];
+            const emailDomain = email.toLowerCase().substring(email.lastIndexOf('@'));
+            
+            if (!allowedDomains.includes(emailDomain)) {
+                showMessage('Registration is restricted to members of the 15th Judicial Circuit\'s Public Defender Office. Please use your @pd15.org or @pd15.state.fl.us email address.', 'error');
+                return;
+            }
+            
             try {
                 const result = await API.register(username, password, email);
                 pendingUsername = username;
@@ -1220,6 +1229,15 @@
             
             if (!username || !password || !email) {
                 showMessage('All fields are required.', 'error');
+                return;
+            }
+            
+            // Validate email domain
+            const allowedDomains = ['@pd15.org', '@pd15.state.fl.us'];
+            const emailDomain = email.toLowerCase().substring(email.lastIndexOf('@'));
+            
+            if (!allowedDomains.includes(emailDomain)) {
+                showMessage('Registration is restricted to members of the 15th Judicial Circuit\'s Public Defender Office. Please use your @pd15.org or @pd15.state.fl.us email address.', 'error');
                 return;
             }
             

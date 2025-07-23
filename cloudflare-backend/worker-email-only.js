@@ -35,6 +35,9 @@ async function sendEmail(to, subject, message, env) {
   };
 
   try {
+    console.log('Attempting to send email to:', to);
+    console.log('From email:', env.FROM_EMAIL);
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -43,6 +46,14 @@ async function sendEmail(to, subject, message, env) {
       },
       body: JSON.stringify(emailData)
     });
+
+    const responseText = await response.text();
+    console.log('SendGrid response status:', response.status);
+    console.log('SendGrid response:', responseText);
+
+    if (!response.ok) {
+      console.error('SendGrid error response:', responseText);
+    }
 
     return response.ok;
   } catch (error) {
@@ -140,6 +151,13 @@ function isValidEmail(email) {
   return emailRegex.test(email);
 }
 
+// Helper to validate email domain
+function isAllowedEmailDomain(email) {
+  const allowedDomains = ['@pd15.org', '@pd15.state.fl.us'];
+  const emailDomain = email.toLowerCase().substring(email.lastIndexOf('@'));
+  return allowedDomains.includes(emailDomain);
+}
+
 // CORS headers
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -175,6 +193,15 @@ export default {
         if (!isValidEmail(email)) {
           return new Response(JSON.stringify({ 
             error: 'Please enter a valid email address' 
+          }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        if (!isAllowedEmailDomain(email)) {
+          return new Response(JSON.stringify({ 
+            error: 'Registration is restricted to members of the 15th Judicial Circuit\'s Public Defender Office. Please use your @pd15.org or @pd15.state.fl.us email address.' 
           }), {
             status: 400,
             headers: corsHeaders
@@ -341,6 +368,24 @@ If you didn't create this account, please ignore this email.`;
         
         if (!username || !password || !email) {
           return new Response(JSON.stringify({ error: 'Username, password, and email required' }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        if (!isValidEmail(email)) {
+          return new Response(JSON.stringify({ 
+            error: 'Please enter a valid email address' 
+          }), {
+            status: 400,
+            headers: corsHeaders
+          });
+        }
+
+        if (!isAllowedEmailDomain(email)) {
+          return new Response(JSON.stringify({ 
+            error: 'Registration is restricted to members of the 15th Judicial Circuit\'s Public Defender Office. Please use your @pd15.org or @pd15.state.fl.us email address.' 
+          }), {
             status: 400,
             headers: corsHeaders
           });
@@ -660,24 +705,37 @@ If you didn't request this reset, please ignore this email and consider securing
 
       // Create visit
       if (path === '/api/visits' && request.method === 'POST') {
-        const visit = await request.json();
-        visit.id = crypto.randomUUID();
-        visit.userId = userId;
-        visit.createdAt = new Date().toISOString();
-        
-        // Get existing visits
-        const visitsStr = await env.VISITS.get(`visits:${userId}`, 'json');
-        const visits = visitsStr || [];
-        
-        // Add new visit
-        visits.unshift(visit);
-        
-        // Save back to KV
-        await env.VISITS.put(`visits:${userId}`, JSON.stringify(visits));
-        
-        return new Response(JSON.stringify(visit), {
-          headers: corsHeaders
-        });
+        try {
+          console.log('Save visit request received for user:', userId);
+          const visit = await request.json();
+          console.log('Visit data:', JSON.stringify(visit));
+          
+          visit.id = crypto.randomUUID();
+          visit.userId = userId;
+          visit.createdAt = new Date().toISOString();
+          
+          // Get existing visits
+          const visitsStr = await env.VISITS.get(`visits:${userId}`, 'json');
+          const visits = visitsStr || [];
+          console.log('Existing visits count:', visits.length);
+          
+          // Add new visit
+          visits.unshift(visit);
+          
+          // Save back to KV
+          await env.VISITS.put(`visits:${userId}`, JSON.stringify(visits));
+          console.log('Visit saved successfully');
+          
+          return new Response(JSON.stringify(visit), {
+            headers: corsHeaders
+          });
+        } catch (error) {
+          console.error('Error saving visit:', error);
+          return new Response(JSON.stringify({ error: 'Failed to save visit' }), {
+            status: 500,
+            headers: corsHeaders
+          });
+        }
       }
 
       // Update visit
