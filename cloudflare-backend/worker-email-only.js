@@ -1,4 +1,4 @@
-// Enhanced Cloudflare Worker API for Jail Visit Logger - Email Only
+// Enhanced Cloudflare Worker API for JailJogger - Email Only
 // Includes Email verification, PIN login, password reset (NO SMS)
 
 // Helper function to generate 6-digit PIN
@@ -24,7 +24,7 @@ async function sendEmail(to, subject, message, env) {
     ],
     from: {
       email: env.FROM_EMAIL || 'noreply@example.com',
-      name: 'Jail Visit Logger'
+      name: 'JailJogger'
     },
     content: [
       {
@@ -244,7 +244,7 @@ export default {
         });
 
         // Send verification code
-        const message = `Welcome to Jail Visit Logger!
+        const message = `Welcome to JailJogger!
 
 Your verification code is: ${verificationCode}
 
@@ -252,7 +252,7 @@ This code expires in 10 minutes.
 
 If you didn't create this account, please ignore this email.`;
 
-        const sent = await sendEmail(email, 'Verify Your Jail Visit Logger Account', message, env);
+        const sent = await sendEmail(email, 'Verify Your JailJogger Account', message, env);
 
         if (!sent) {
           return new Response(JSON.stringify({ 
@@ -317,7 +317,7 @@ If you didn't create this account, please ignore this email.`;
         return new Response(JSON.stringify({ 
           token, 
           userId: pendingUser.id,
-          message: 'Account verified successfully! Welcome to Jail Visit Logger.'
+          message: 'Account verified successfully! Welcome to JailJogger.'
         }), {
           headers: corsHeaders
         });
@@ -436,7 +436,7 @@ If you didn't create this account, please ignore this email.`;
         // Send verification email
         const emailSent = await sendEmail(
           email,
-          'Verify Your Email - Jail Visit Logger',
+          'Verify Your Email - JailJogger',
           `Your verification code is: ${verificationCode}\n\nThis code expires in 10 minutes.\n\nIf you didn't request this, please ignore this email.`,
           env
         );
@@ -493,7 +493,7 @@ If you didn't create this account, please ignore this email.`;
         });
 
         // Send PIN
-        const message = `Your Jail Visit Logger login PIN is: ${pin}
+        const message = `Your JailJogger login PIN is: ${pin}
 
 This PIN expires in 5 minutes.
 
@@ -594,7 +594,7 @@ If you didn't request this, please ignore this email and consider changing your 
         });
 
         // Send reset code
-        const message = `You requested a password reset for your Jail Visit Logger account.
+        const message = `You requested a password reset for your JailJogger account.
 
 Your password reset code is: ${resetCode}
 
