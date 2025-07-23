@@ -336,6 +336,17 @@
             background: var(--accent-danger);
             animation: pulse 1.5s infinite;
         }
+        
+        .record-button.paused {
+            background: var(--accent-warning);
+            border-color: var(--accent-warning);
+        }
+        
+        #stopButton {
+            border-color: var(--accent-primary);
+            background: var(--accent-primary);
+            color: white;
+        }
 
         @keyframes pulse {
             0% { opacity: 1; }
@@ -778,6 +789,9 @@
             <button class="action-button record-button" id="recordButton" onclick="toggleRecording()">
                 <span>🎤</span> Tap to Record Visit
             </button>
+            <button class="action-button" id="stopButton" onclick="stopAndProcessRecording()" style="display: none;">
+                <span>⏹️</span> Stop & Process
+            </button>
             <button class="action-button manual-button" onclick="showManualEntry()">
                 <span>➕</span> Manual Entry
             </button>
@@ -850,9 +864,11 @@
         let currentAuthTab = 'login';
         let visits = [];
         let isRecording = false;
+        let isPaused = false;
         let recognition = null;
         let editingVisitId = null;
         let isAuthenticated = false;
+        let recordingTranscript = ''; // Accumulate transcript across pause/resume
 
         // API Module
         const API = {
@@ -1347,24 +1363,49 @@
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = false;
+                recognition.continuous = true;
+                recognition.interimResults = true;
                 recognition.lang = 'en-US';
                 
                 recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    document.getElementById('transcriptionText').textContent = transcript;
+                    let currentTranscript = '';
+                    
+                    // Get all results from this session
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        currentTranscript += event.results[i][0].transcript + ' ';
+                    }
+                    
+                    // Display accumulated transcript + current session
+                    const fullTranscript = recordingTranscript + currentTranscript;
+                    document.getElementById('transcriptionText').textContent = fullTranscript.trim();
                     document.getElementById('transcriptionBox').style.display = 'block';
-                    parseTranscription(transcript);
                 };
                 
                 recognition.onerror = function(event) {
                     console.error('Speech recognition error', event.error);
-                    stopRecording();
+                    if (event.error === 'no-speech' && isRecording && !isPaused) {
+                        // Restart on no-speech error if still recording
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.error('Failed to restart recognition:', e);
+                        }
+                    } else if (event.error !== 'aborted') {
+                        // For other errors, stop recording
+                        resetRecording();
+                    }
                 };
                 
                 recognition.onend = function() {
-                    stopRecording();
+                    // Restart if still recording and not paused
+                    if (isRecording && !isPaused) {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.error('Failed to restart recognition:', e);
+                            resetRecording();
+                        }
+                    }
                 };
             } else {
                 document.getElementById('recordButton').innerHTML = '<span>🎤</span> Voice not supported';
@@ -1375,26 +1416,69 @@
         function toggleRecording() {
             if (!recognition) return;
             
-            if (isRecording) {
-                recognition.stop();
-            } else {
+            if (!isRecording) {
+                // Start recording
+                recordingTranscript = '';
+                document.getElementById('transcriptionText').textContent = '';
                 recognition.start();
-                startRecording();
+                isRecording = true;
+                isPaused = false;
+                updateRecordingUI();
+            } else if (!isPaused) {
+                // Pause recording
+                recognition.stop();
+                isPaused = true;
+                // Save current transcript
+                recordingTranscript = document.getElementById('transcriptionText').textContent + ' ';
+                updateRecordingUI();
+            } else {
+                // Resume recording
+                recognition.start();
+                isPaused = false;
+                updateRecordingUI();
             }
         }
 
-        function startRecording() {
-            isRecording = true;
-            const button = document.getElementById('recordButton');
-            button.innerHTML = '<span>🔴</span> Recording...';
-            button.classList.add('recording');
+        function updateRecordingUI() {
+            const recordButton = document.getElementById('recordButton');
+            const stopButton = document.getElementById('stopButton');
+            
+            if (!isRecording) {
+                recordButton.innerHTML = '<span>🎤</span> Tap to Record Visit';
+                recordButton.classList.remove('recording', 'paused');
+                stopButton.style.display = 'none';
+            } else if (isPaused) {
+                recordButton.innerHTML = '<span>▶️</span> Resume Recording';
+                recordButton.classList.remove('recording');
+                recordButton.classList.add('paused');
+                stopButton.style.display = 'inline-block';
+            } else {
+                recordButton.innerHTML = '<span>⏸️</span> Pause Recording';
+                recordButton.classList.add('recording');
+                recordButton.classList.remove('paused');
+                stopButton.style.display = 'inline-block';
+            }
         }
 
-        function stopRecording() {
+        function stopAndProcessRecording() {
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+            
+            const finalTranscript = document.getElementById('transcriptionText').textContent;
+            
+            if (finalTranscript && finalTranscript.trim()) {
+                parseTranscription(finalTranscript);
+            }
+            
+            resetRecording();
+        }
+        
+        function resetRecording() {
             isRecording = false;
-            const button = document.getElementById('recordButton');
-            button.innerHTML = '<span>🎤</span> Tap to Record Visit';
-            button.classList.remove('recording');
+            isPaused = false;
+            recordingTranscript = '';
+            updateRecordingUI();
         }
 
         async function parseTranscription(text) {
