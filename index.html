@@ -1398,55 +1398,170 @@
         }
 
         async function parseTranscription(text) {
-            const patterns = [
-                /visited\s+(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
-                /saw\s+(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
-                /met\s+(?:with\s+)?(.+?)\s+(?:in|at)\s+([A-Z]-\d+-[A-Z])/i,
-                /(.+?)\s+(?:in|at|pod)\s+([A-Z]-\d+-[A-Z])/i
-            ];
-
-            let clientName = '';
-            let location = '';
-
-            for (const pattern of patterns) {
-                const match = text.match(pattern);
-                if (match) {
-                    clientName = match[1].trim();
-                    location = match[2].toUpperCase();
-                    break;
-                }
-            }
-
-            if (clientName && location) {
-                const visitData = {
-                    date: new Date().toISOString(),
-                    clientName: clientName,
-                    location: location,
-                    notes: `Recorded via voice: "${text}"`
+            // Helper function to parse dates from text
+            function parseDate(text) {
+                const months = {
+                    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+                    'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
+                    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+                    'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
                 };
-
-                try {
-                    const newVisit = await API.saveVisit(visitData);
-                    visits.unshift(newVisit);
-                    updateStats();
-                    renderVisits();
+                
+                // Try to find month and day
+                const datePattern = /(?:on\s+)?(?:the\s+)?(\w+)\s+(\d{1,2})(?:st|nd|rd|th)?/i;
+                const match = text.match(datePattern);
+                
+                if (match) {
+                    const monthName = match[1].toLowerCase();
+                    const day = parseInt(match[2]);
+                    const month = months[monthName];
                     
-                    setTimeout(() => {
-                        document.getElementById('transcriptionBox').style.display = 'none';
-                    }, 3000);
-                } catch (e) {
-                    console.error('Failed to save voice visit:', e);
-                    showManualEntry();
-                    document.getElementById('clientName').value = clientName;
-                    document.getElementById('location').value = location;
-                    document.getElementById('notes').value = `Voice note: "${text}"`;
+                    if (month) {
+                        const year = new Date().getFullYear();
+                        const date = new Date(year, month - 1, day);
+                        
+                        // If the date is in the future, assume previous year
+                        if (date > new Date()) {
+                            date.setFullYear(year - 1);
+                        }
+                        
+                        return date;
+                    }
                 }
-            } else {
-                showManualEntry();
-                if (clientName) document.getElementById('clientName').value = clientName;
-                if (location) document.getElementById('location').value = location;
-                document.getElementById('notes').value = `Voice note: "${text}"`;
+                
+                // Default to today
+                return new Date();
             }
+            
+            // Helper function to parse time from text
+            function parseTime(text) {
+                // Match various time formats: "10:00 a.m.", "10 am", "10:30 PM", etc.
+                const timePattern = /(\d{1,2})(?::(\d{2}))?\s*([ap]\.?m\.?|o'clock)?/i;
+                const match = text.match(timePattern);
+                
+                if (match) {
+                    let hours = parseInt(match[1]);
+                    const minutes = match[2] ? parseInt(match[2]) : 0;
+                    const meridiem = match[3];
+                    
+                    if (meridiem && meridiem.toLowerCase().includes('p') && hours < 12) {
+                        hours += 12;
+                    } else if (meridiem && meridiem.toLowerCase().includes('a') && hours === 12) {
+                        hours = 0;
+                    }
+                    
+                    // Format time as HH:MM for input[type="time"]
+                    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    
+                    return timeStr;
+                }
+                
+                return '';
+            }
+            
+            // Helper function to parse location
+            function parseLocation(text) {
+                // Look for patterns like "South 8 Delta", "S-8-D", "South eight delta"
+                const locationPatterns = [
+                    /(?:at|in)\s+([sn]outh|[ew]est|north|east|west)?\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*(alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu|[a-z])/i,
+                    /(?:at|in)\s+([sn]|[ew])-?(\d+)-?([a-z])/i,
+                    /(?:pod|unit)\s+([sn]outh|[ew]est|north|east|west)?\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*(alpha|bravo|charlie|delta|echo|foxtrot|golf|hotel|india|juliet|kilo|lima|mike|november|oscar|papa|quebec|romeo|sierra|tango|uniform|victor|whiskey|xray|yankee|zulu|[a-z])/i
+                ];
+                
+                const numberWords = {
+                    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+                    'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+                };
+                
+                const phoneticAlphabet = {
+                    'alpha': 'A', 'bravo': 'B', 'charlie': 'C', 'delta': 'D', 'echo': 'E',
+                    'foxtrot': 'F', 'golf': 'G', 'hotel': 'H', 'india': 'I', 'juliet': 'J',
+                    'kilo': 'K', 'lima': 'L', 'mike': 'M', 'november': 'N', 'oscar': 'O',
+                    'papa': 'P', 'quebec': 'Q', 'romeo': 'R', 'sierra': 'S', 'tango': 'T',
+                    'uniform': 'U', 'victor': 'V', 'whiskey': 'W', 'xray': 'X', 'yankee': 'Y',
+                    'zulu': 'Z'
+                };
+                
+                for (const pattern of locationPatterns) {
+                    const match = text.match(pattern);
+                    if (match) {
+                        let direction = match[1] || '';
+                        let number = match[2];
+                        let unit = match[3];
+                        
+                        // Convert direction to single letter
+                        if (direction) {
+                            direction = direction.toLowerCase();
+                            if (direction.includes('south')) direction = 'S';
+                            else if (direction.includes('north')) direction = 'N';
+                            else if (direction.includes('east')) direction = 'E';
+                            else if (direction.includes('west')) direction = 'W';
+                            else direction = direction.toUpperCase();
+                        }
+                        
+                        // Convert number words to digits
+                        if (numberWords[number.toLowerCase()]) {
+                            number = numberWords[number.toLowerCase()];
+                        }
+                        
+                        // Convert phonetic alphabet to letters
+                        if (phoneticAlphabet[unit.toLowerCase()]) {
+                            unit = phoneticAlphabet[unit.toLowerCase()];
+                        } else {
+                            unit = unit.charAt(0).toUpperCase();
+                        }
+                        
+                        // Format as S-8-D
+                        return `${direction}-${number}-${unit}`.replace(/^-/, '');
+                    }
+                }
+                
+                return '';
+            }
+            
+            // Helper function to extract client name
+            function parseClientName(text) {
+                // Look for patterns like "visited John Doe", "I visited John Doe", "saw John Doe"
+                const namePatterns = [
+                    /(?:i\s+)?(?:visited|saw|met\s+with?)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+                    /(?:visit\s+with|visit\s+to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i
+                ];
+                
+                for (const pattern of namePatterns) {
+                    const match = text.match(pattern);
+                    if (match) {
+                        return match[1].trim();
+                    }
+                }
+                
+                return '';
+            }
+            
+            // Parse the transcription
+            const date = parseDate(text);
+            const time = parseTime(text);
+            const location = parseLocation(text);
+            const clientName = parseClientName(text);
+            
+            // Show manual entry form with parsed values
+            showManualEntry();
+            
+            // Set the parsed values
+            if (date) {
+                document.getElementById('dateInput').valueAsDate = date;
+            }
+            if (time) {
+                document.getElementById('timeInput').value = time;
+            }
+            if (clientName) {
+                document.getElementById('clientName').value = clientName;
+            }
+            if (location) {
+                document.getElementById('location').value = location;
+            }
+            
+            // Add the full transcription to notes
+            document.getElementById('notes').value = `Voice note: "${text}"`;
         }
 
         // Manual entry and other functions remain the same
