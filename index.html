@@ -347,6 +347,74 @@
             background: var(--accent-primary);
             color: white;
         }
+        
+        /* Preview Modal Styles */
+        .preview-visit-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .preview-visit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .preview-visit-number {
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+        
+        .preview-visit-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 14px;
+        }
+        
+        .preview-detail {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .preview-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+        
+        .preview-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .preview-edit-btn, .preview-remove-btn {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .preview-edit-btn {
+            background: var(--accent-primary);
+            color: white;
+        }
+        
+        .preview-remove-btn {
+            background: var(--accent-danger);
+            color: white;
+        }
 
         @keyframes pulse {
             0% { opacity: 1; }
@@ -853,6 +921,28 @@
         </div>
     </div>
 
+    <!-- Voice Recording Preview Modal -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <button class="close-button" onclick="closePreviewModal()">&times;</button>
+            <h2 class="modal-title">Review Detected Visits</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">
+                We detected <span id="detectedCount">0</span> visit(s) from your recording. Please review and confirm:
+            </p>
+            <div id="previewVisits" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                <!-- Preview items will be inserted here -->
+            </div>
+            <div class="form-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="form-button" style="background: var(--accent-danger);" onclick="abandonPreview()">
+                    Abandon All
+                </button>
+                <button type="button" class="form-button" style="background: var(--accent-success);" onclick="confirmAllVisits()">
+                    Confirm All
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // API Configuration
         const API_URL = 'https://jail-visit-api-enhanced.dlkarpay.workers.dev'; // Update this after deployment
@@ -869,6 +959,7 @@
         let editingVisitId = null;
         let isAuthenticated = false;
         let recordingTranscript = ''; // Accumulate transcript across pause/resume
+        let detectedVisits = []; // Store visits detected from voice recording
 
         // API Module
         const API = {
@@ -1482,6 +1573,37 @@
         }
 
         async function parseTranscription(text) {
+            // Split text into potential visit segments
+            // Look for patterns that might indicate separate visits
+            const segments = text.split(/(?:and\s+then|also|additionally|next|after\s+that)/i);
+            detectedVisits = [];
+            
+            segments.forEach((segment, index) => {
+                const visitData = extractVisitFromSegment(segment);
+                if (visitData && (visitData.clientName || visitData.location)) {
+                    detectedVisits.push(visitData);
+                }
+            });
+            
+            // If no visits detected with segments, try to extract from full text
+            if (detectedVisits.length === 0) {
+                const visitData = extractVisitFromSegment(text);
+                if (visitData && (visitData.clientName || visitData.location)) {
+                    detectedVisits.push(visitData);
+                }
+            }
+            
+            // Show preview modal if any visits were detected
+            if (detectedVisits.length > 0) {
+                showPreviewModal();
+            } else {
+                // No visits detected, show manual entry with transcript in notes
+                showManualEntry();
+                document.getElementById('notes').value = `Voice note: "${text}"`;
+            }
+        }
+        
+        function extractVisitFromSegment(segment) {
             // Helper function to parse dates from text
             function parseDate(text) {
                 const months = {
@@ -1621,31 +1743,19 @@
                 return '';
             }
             
-            // Parse the transcription
-            const date = parseDate(text);
-            const time = parseTime(text);
-            const location = parseLocation(text);
-            const clientName = parseClientName(text);
+            // Parse the segment
+            const date = parseDate(segment);
+            const time = parseTime(segment);
+            const location = parseLocation(segment);
+            const clientName = parseClientName(segment);
             
-            // Show manual entry form with parsed values
-            showManualEntry();
-            
-            // Set the parsed values
-            if (date) {
-                document.getElementById('dateInput').valueAsDate = date;
-            }
-            if (time) {
-                document.getElementById('timeInput').value = time;
-            }
-            if (clientName) {
-                document.getElementById('clientName').value = clientName;
-            }
-            if (location) {
-                document.getElementById('location').value = location;
-            }
-            
-            // Add the full transcription to notes
-            document.getElementById('notes').value = `Voice note: "${text}"`;
+            return {
+                date: date,
+                time: time,
+                location: location,
+                clientName: clientName,
+                originalText: segment.trim()
+            };
         }
 
         // Manual entry and other functions remain the same
@@ -1680,6 +1790,145 @@
             document.getElementById('manualEntryModal').style.display = 'none';
             editingVisitId = null;
         }
+        
+        // Preview Modal Functions
+        function showPreviewModal() {
+            const modal = document.getElementById('previewModal');
+            const container = document.getElementById('previewVisits');
+            const countSpan = document.getElementById('detectedCount');
+            
+            countSpan.textContent = detectedVisits.length;
+            container.innerHTML = '';
+            
+            detectedVisits.forEach((visit, index) => {
+                const visitDiv = document.createElement('div');
+                visitDiv.className = 'preview-visit-item';
+                visitDiv.innerHTML = `
+                    <div class="preview-visit-header">
+                        <span class="preview-visit-number">Visit #${index + 1}</span>
+                        <div class="preview-actions">
+                            <button class="preview-edit-btn" onclick="editDetectedVisit(${index})">Edit</button>
+                            <button class="preview-remove-btn" onclick="removeDetectedVisit(${index})">Remove</button>
+                        </div>
+                    </div>
+                    <div class="preview-visit-details">
+                        <div class="preview-detail">
+                            <span class="preview-label">Date</span>
+                            <span class="preview-value">${visit.date ? visit.date.toLocaleDateString() : 'Not detected'}</span>
+                        </div>
+                        <div class="preview-detail">
+                            <span class="preview-label">Time</span>
+                            <span class="preview-value">${visit.time || 'Not detected'}</span>
+                        </div>
+                        <div class="preview-detail">
+                            <span class="preview-label">Client Name</span>
+                            <span class="preview-value">${visit.clientName || 'Not detected'}</span>
+                        </div>
+                        <div class="preview-detail">
+                            <span class="preview-label">Location (Pod)</span>
+                            <span class="preview-value">${visit.location || 'Not detected'}</span>
+                        </div>
+                    </div>
+                    ${visit.originalText ? `<div style="margin-top: 10px; padding: 10px; background: var(--bg-primary); border-radius: 4px; font-size: 13px; color: var(--text-secondary);">
+                        <strong>Original:</strong> "${visit.originalText}"
+                    </div>` : ''}
+                `;
+                container.appendChild(visitDiv);
+            });
+            
+            modal.style.display = 'block';
+        }
+        
+        function closePreviewModal() {
+            document.getElementById('previewModal').style.display = 'none';
+            detectedVisits = [];
+        }
+        
+        function editDetectedVisit(index) {
+            const visit = detectedVisits[index];
+            
+            // Close preview modal temporarily
+            document.getElementById('previewModal').style.display = 'none';
+            
+            // Show manual entry modal with pre-filled data
+            showManualEntry();
+            
+            // Pre-fill the form
+            if (visit.date) {
+                document.getElementById('dateInput').valueAsDate = visit.date;
+            }
+            if (visit.time) {
+                document.getElementById('timeInput').value = visit.time;
+            }
+            if (visit.clientName) {
+                document.getElementById('clientName').value = visit.clientName;
+            }
+            if (visit.location) {
+                document.getElementById('location').value = visit.location;
+            }
+            document.getElementById('notes').value = `Voice note: "${visit.originalText}"`;
+            
+            // Store the index so we can update it after saving
+            editingVisitId = `preview-${index}`;
+        }
+        
+        function removeDetectedVisit(index) {
+            detectedVisits.splice(index, 1);
+            
+            if (detectedVisits.length === 0) {
+                closePreviewModal();
+            } else {
+                showPreviewModal(); // Refresh the display
+            }
+        }
+        
+        function abandonPreview() {
+            if (confirm('Are you sure you want to abandon all detected visits?')) {
+                closePreviewModal();
+                // Hide transcription box too
+                document.getElementById('transcriptionBox').style.display = 'none';
+            }
+        }
+        
+        async function confirmAllVisits() {
+            let successCount = 0;
+            
+            for (const visit of detectedVisits) {
+                try {
+                    // Create proper date/time
+                    const dateStr = visit.date ? 
+                        `${visit.date.getFullYear()}-${String(visit.date.getMonth() + 1).padStart(2, '0')}-${String(visit.date.getDate()).padStart(2, '0')}` :
+                        new Date().toISOString().split('T')[0];
+                    
+                    const timeStr = visit.time || new Date().toTimeString().substring(0, 5);
+                    
+                    const visitData = {
+                        date: new Date(`${dateStr}T${timeStr}`).toISOString(),
+                        clientName: visit.clientName || 'Unknown Client',
+                        location: visit.location || 'Unknown Location',
+                        notes: `Voice recorded: "${visit.originalText}"`
+                    };
+                    
+                    const newVisit = await API.saveVisit(visitData);
+                    visits.unshift(newVisit);
+                    successCount++;
+                } catch (e) {
+                    console.error('Failed to save visit:', e);
+                }
+            }
+            
+            if (successCount > 0) {
+                updateStats();
+                renderVisits();
+                closePreviewModal();
+                document.getElementById('transcriptionBox').style.display = 'none';
+                
+                // Show success message
+                alert(`Successfully saved ${successCount} visit(s).`);
+            } else {
+                alert('Failed to save visits. Please try again.');
+            }
+        }
 
         async function saveVisit(event) {
             event.preventDefault();
@@ -1694,20 +1943,34 @@
             };
 
             try {
-                if (editingVisitId) {
+                if (editingVisitId && editingVisitId.startsWith('preview-')) {
+                    // Update the detected visit and return to preview
+                    const index = parseInt(editingVisitId.split('-')[1]);
+                    detectedVisits[index] = {
+                        date: new Date(`${date}T${time}`),
+                        time: time,
+                        clientName: visitData.clientName,
+                        location: visitData.location,
+                        originalText: detectedVisits[index].originalText
+                    };
+                    closeModal();
+                    showPreviewModal();
+                } else if (editingVisitId) {
                     const updatedVisit = await API.updateVisit(editingVisitId, visitData);
                     const index = visits.findIndex(v => v.id === editingVisitId);
                     if (index !== -1) {
                         visits[index] = updatedVisit;
                     }
+                    updateStats();
+                    renderVisits();
+                    closeModal();
                 } else {
                     const newVisit = await API.saveVisit(visitData);
                     visits.unshift(newVisit);
+                    updateStats();
+                    renderVisits();
+                    closeModal();
                 }
-
-                updateStats();
-                renderVisits();
-                closeModal();
             } catch (e) {
                 console.error('Failed to save visit:', e);
                 alert('Failed to save visit. Please try again.');
