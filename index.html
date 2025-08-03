@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jail Visit Logger - Enhanced Security</title>
+    <title>JailJogger - Enhanced Security</title>
     <style>
         * {
             margin: 0;
@@ -645,7 +645,7 @@
     <!-- Authentication Screen -->
     <div class="auth-container" id="authScreen">
         <div class="auth-form">
-            <h1 class="auth-title">Jail Visit Logger</h1>
+            <h1 class="auth-title">JailJogger</h1>
             
             <div class="auth-tabs">
                 <button class="auth-tab active" onclick="showLoginTab()">Login</button>
@@ -817,7 +817,7 @@
     <div class="app-container" id="mainApp">
         <header class="app-header">
             <div class="header-content">
-                <h1 class="app-title">Jail Visit Logger</h1>
+                <h1 class="app-title">JailJogger</h1>
                 <div class="header-buttons">
                     <button class="clear-data-button" onclick="confirmClearData()">Clear All Data</button>
                     <button class="logout-button" onclick="logout()">Logout</button>
@@ -863,7 +863,7 @@
             <button class="action-button manual-button" onclick="showManualEntry()">
                 <span>➕</span> Manual Entry
             </button>
-            <button class="action-button pdf-button" onclick="generatePDF()">
+            <button class="action-button pdf-button" onclick="showReportModal()">
                 <span>📄</span> Generate Monthly PDF
             </button>
         </div>
@@ -940,6 +940,49 @@
                     Confirm All
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Report Generation Modal -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeReportModal()">&times;</button>
+            <h2 class="modal-title">Generate Monthly Report</h2>
+            
+            <div class="form-group">
+                <label class="form-label" for="reportMonth">Month</label>
+                <select id="reportMonth" class="form-input">
+                    <option value="0">January</option>
+                    <option value="1">February</option>
+                    <option value="2">March</option>
+                    <option value="3">April</option>
+                    <option value="4">May</option>
+                    <option value="5">June</option>
+                    <option value="6">July</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">October</option>
+                    <option value="10">November</option>
+                    <option value="11">December</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="reportYear">Year</label>
+                <select id="reportYear" class="form-input">
+                    <!-- Years will be populated by JavaScript -->
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-top: 20px;">
+                <div id="reportPreview" style="padding: 15px; background: var(--bg-tertiary); border-radius: 8px; font-size: 14px; color: var(--text-secondary);">
+                    <span id="previewText">Select month and year to see visit count</span>
+                </div>
+            </div>
+            
+            <button type="button" class="save-button" onclick="generateSelectedPDF()">
+                Generate PDF Report
+            </button>
         </div>
     </div>
 
@@ -2037,16 +2080,100 @@
             }
         }
 
-        function generatePDF() {
+        // Report Modal Functions
+        function showReportModal() {
+            const modal = document.getElementById('reportModal');
+            const monthSelect = document.getElementById('reportMonth');
+            const yearSelect = document.getElementById('reportYear');
+            
+            // Set current month/year as default
             const now = new Date();
+            monthSelect.value = now.getMonth();
+            
+            // Populate year dropdown with available years from visits
+            populateYearOptions();
+            yearSelect.value = now.getFullYear();
+            
+            // Update preview
+            updateReportPreview();
+            
+            // Add event listeners for real-time preview
+            monthSelect.addEventListener('change', updateReportPreview);
+            yearSelect.addEventListener('change', updateReportPreview);
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+        
+        function populateYearOptions() {
+            const yearSelect = document.getElementById('reportYear');
+            const currentYear = new Date().getFullYear();
+            const years = new Set();
+            
+            // Add current year
+            years.add(currentYear);
+            
+            // Add years from existing visits
+            visits.forEach(visit => {
+                const visitYear = new Date(visit.date).getFullYear();
+                years.add(visitYear);
+            });
+            
+            // Convert to sorted array and populate dropdown
+            const sortedYears = Array.from(years).sort((a, b) => b - a);
+            yearSelect.innerHTML = '';
+            
+            sortedYears.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            });
+        }
+        
+        function updateReportPreview() {
+            const month = parseInt(document.getElementById('reportMonth').value);
+            const year = parseInt(document.getElementById('reportYear').value);
             const monthNames = ["January", "February", "March", "April", "May", "June", 
                                "July", "August", "September", "October", "November", "December"];
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
             
             const monthVisits = visits.filter(visit => {
                 const visitDate = new Date(visit.date);
-                return visitDate.getMonth() === currentMonth && visitDate.getFullYear() === currentYear;
+                return visitDate.getMonth() === month && visitDate.getFullYear() === year;
+            });
+            
+            const previewText = document.getElementById('previewText');
+            previewText.textContent = `${monthNames[month]} ${year}: ${monthVisits.length} visit(s) found`;
+            
+            // Show some visit details if available
+            if (monthVisits.length > 0) {
+                const uniqueClients = [...new Set(monthVisits.map(v => v.clientName))].length;
+                previewText.textContent += ` • ${uniqueClients} unique client(s)`;
+            }
+        }
+        
+        function generateSelectedPDF() {
+            const month = parseInt(document.getElementById('reportMonth').value);
+            const year = parseInt(document.getElementById('reportYear').value);
+            generatePDF(month, year);
+            closeReportModal();
+        }
+
+        function generatePDF(selectedMonth = null, selectedYear = null) {
+            const now = new Date();
+            const monthNames = ["January", "February", "March", "April", "May", "June", 
+                               "July", "August", "September", "October", "November", "December"];
+            
+            // Use selected month/year or default to current month/year
+            const targetMonth = selectedMonth !== null ? selectedMonth : now.getMonth();
+            const targetYear = selectedYear !== null ? selectedYear : now.getFullYear();
+            
+            const monthVisits = visits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visitDate.getMonth() === targetMonth && visitDate.getFullYear() === targetYear;
             }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
             const attorneyName = document.getElementById('attorneyName').value || '_________________';
@@ -2116,7 +2243,7 @@
                         }
                     }
                 </style>
-                <h1>Jail Visit Log - ${monthNames[currentMonth]} ${currentYear}</h1>
+                <h1>JailJogger Log - ${monthNames[targetMonth]} ${targetYear}</h1>
                 <div class="header-info">
                     <p><strong>Attorney:</strong> ${attorneyName}</p>
                     <p><strong>Court Division:</strong> ${courtDivision}</p>
@@ -2142,7 +2269,7 @@
             printWindow.document.write(`
                 <html>
                 <head>
-                    <title>Jail Visit Log - ${monthNames[currentMonth]} ${currentYear}</title>
+                    <title>JailJogger Log - ${monthNames[targetMonth]} ${targetYear}</title>
                 </head>
                 <body>
                     ${printContent}
@@ -2159,9 +2286,16 @@
         }
 
         window.onclick = function(event) {
-            const modal = document.getElementById('manualEntryModal');
-            if (event.target === modal) {
+            const manualModal = document.getElementById('manualEntryModal');
+            const reportModal = document.getElementById('reportModal');
+            const previewModal = document.getElementById('previewModal');
+            
+            if (event.target === manualModal) {
                 closeModal();
+            } else if (event.target === reportModal) {
+                closeReportModal();
+            } else if (event.target === previewModal) {
+                closePreviewModal();
             }
         }
     </script>
