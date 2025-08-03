@@ -58,7 +58,7 @@ This will deploy to: `https://jail-visit-api-enhanced.dlkarpay.workers.dev`
 1. **Open Enhanced Frontend**: 
    - Rename `index-enhanced.html` to `index-api-enhanced.html`
    - Commit and push to GitHub
-   - Access at: `https://jailvisit.karpaylegal.com/index-api-enhanced.html`
+   - Access at: `https://jailjogger.karpaylegal.com/index-api-enhanced.html`
 
 2. **Test Registration Flow**:
    - Register with email address

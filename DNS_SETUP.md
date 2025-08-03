@@ -21,14 +21,14 @@ Go to: https://dash.cloudflare.com → Your Domain (karpaylegal.com) → DNS →
    - Type: `A`, Name: `@`, Content: `185.199.111.153`, Proxy: `Proxied`
 
 ### Result:
-- Your app will be accessible at: `https://jailvisit.karpaylegal.com`
+- Your app will be accessible at: `https://jailjogger.karpaylegal.com`
 - Your Worker API remains at: `https://jail-visit-api.dlkarpay.workers.dev`
 
 ## Verification Steps:
 
 1. Wait 5-10 minutes for DNS propagation
 2. Check GitHub Pages settings - should show green checkmark
-3. Visit https://jailvisit.karpaylegal.com
+3. Visit https://jailjogger.karpaylegal.com
 4. Verify HTTPS certificate is working
 
 ## If You Get SSL/TLS Errors:

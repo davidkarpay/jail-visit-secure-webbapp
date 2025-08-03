@@ -119,7 +119,7 @@ git push
 Your site should update automatically at:
 https://davidkarpay.github.io/jail-visit-secure-webbapp/
 
-**Note**: You can also access it at https://jailvisit.karpaylegal.com/ once the DNS fully propagates (may take up to 24 hours).
+**Note**: You can also access it at https://jailjogger.karpaylegal.com/ once the DNS fully propagates (may take up to 24 hours).
 
 ## Step 8: Test the Deployment
 
