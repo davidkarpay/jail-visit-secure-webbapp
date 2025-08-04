@@ -1,0 +1,39 @@
+name = "jail-visit-api-enhanced"
+main = "worker-enhanced-simple.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "USERS"
+id = "cf359fa838de461b90d015512bc67051"
+
+[[kv_namespaces]]
+binding = "VISITS"
+id = "962bffb03dcc4491b1c0ef9c76141c7a"
+
+[[kv_namespaces]]
+binding = "SETTINGS"
+id = "9733724064cf452ba816404fd71981e1"
+
+# New KV namespaces for enhanced features
+[[kv_namespaces]]
+binding = "PENDING_USERS"
+id = "3f7baa60b2e640159e796e6f09e6f261"
+
+[[kv_namespaces]]
+binding = "LOGIN_PINS"
+id = "ca7c3b8de7a3401ca60901db37debdb8"
+
+[[kv_namespaces]]
+binding = "RESET_CODES"
+id = "f67658fe0dd64661a530121ace4c333c"
+
+# Environment variables
+[vars]
+JWT_SECRET = "karpay-jail-visit-secure-jwt-2024-production-key-7x9z"
+
+# EmailJS Configuration
+# Get these from your EmailJS dashboard at https://emailjs.com
+EMAILJS_SERVICE_ID = "service_c3z3laj"
+EMAILJS_TEMPLATE_ID = "template_u9st7fr"
+EMAILJS_USER_ID = "Jailjogger"
