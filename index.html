@@ -660,12 +660,12 @@
                 <form onsubmit="handleLogin(event)">
                     <div class="form-group">
                         <label class="form-label" for="loginUsername">Username</label>
-                        <input type="text" id="loginUsername" class="form-input" required>
+                        <input type="text" id="loginUsername" class="form-input" required autocomplete="username">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" class="form-input" required>
+                        <input type="password" id="loginPassword" class="form-input" required autocomplete="current-password">
                     </div>
                     
                     <button type="submit" class="auth-button">Login</button>
@@ -1223,11 +1223,19 @@
             const username = document.getElementById('loginUsername').value;
             const password = document.getElementById('loginPassword').value;
             
+            // Debug logging
+            console.log('Login attempt:', { 
+                username, 
+                passwordLength: password.length,
+                passwordFirst5: password.substring(0, 5) + '...'
+            });
+            
             try {
                 await API.login(username, password);
                 sessionStorage.setItem('lastUsername', username);
                 showMainApp();
             } catch (error) {
+                console.error('Login error:', error);
                 showMessage(error.message, 'error');
             }
         }
