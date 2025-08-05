@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Domain Validation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Email Domain Validation Test</h1>
+    <button onclick="runTests()">Run Tests</button>
+    <div id="results"></div>
+
+    <script>
+        function validateEmailDomain(email) {
+            const allowedDomains = ['@pd15.org', '@pd15.state.fl.us'];
+            const emailDomain = email.toLowerCase().substring(email.lastIndexOf('@'));
+            return allowedDomains.includes(emailDomain);
+        }
+
+        function runTests() {
+            const testCases = [
+                { email: 'user@gmail.com', shouldPass: false },
+                { email: 'test@pd15.org', shouldPass: true },
+                { email: 'john.doe@pd15.state.fl.us', shouldPass: true },
+                { email: 'invalid@pd15.com', shouldPass: false },
+                { email: 'user@PD15.ORG', shouldPass: true }, // Test case insensitivity
+                { email: 'test@pd15.state.fl.us.fake.com', shouldPass: false },
+                { email: 'admin@yahoo.com', shouldPass: false },
+                { email: 'user@PD15.STATE.FL.US', shouldPass: true } // Test case insensitivity
+            ];
+
+            const results = document.getElementById('results');
+            results.innerHTML = '';
+
+            testCases.forEach((test, index) => {
+                const result = validateEmailDomain(test.email);
+                const passed = result === test.shouldPass;
+                
+                const div = document.createElement('div');
+                div.className = `test ${passed ? 'pass' : 'fail'}`;
+                div.innerHTML = `
+                    Test ${index + 1}: ${test.email}<br>
+                    Expected: ${test.shouldPass ? 'ALLOW' : 'BLOCK'}<br>
+                    Result: ${result ? 'ALLOW' : 'BLOCK'}<br>
+                    Status: ${passed ? '✓ PASS' : '✗ FAIL'}
+                `;
+                results.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

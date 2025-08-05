@@ -8,10 +8,20 @@ function generatePIN() {
 }
 
 // Helper function to send email using EmailJS API
-async function sendEmail(to, subject, message, env) {
-  if (!env.EMAILJS_SERVICE_ID || !env.EMAILJS_TEMPLATE_ID || !env.EMAILJS_USER_ID) {
+async function sendEmail(to, subject, message, env, emailType = 'default') {
+  if (!env.EMAILJS_SERVICE_ID || !env.EMAILJS_USER_ID) {
     console.error('EmailJS credentials not configured');
     return false;
+  }
+
+  // Use different templates for different email types
+  let templateId = env.EMAILJS_TEMPLATE_ID; // Default template
+  if (emailType === 'reset' && env.EMAILJS_RESET_TEMPLATE_ID) {
+    templateId = env.EMAILJS_RESET_TEMPLATE_ID;
+  } else if (emailType === 'pin' && env.EMAILJS_PIN_TEMPLATE_ID) {
+    templateId = env.EMAILJS_PIN_TEMPLATE_ID;
+  } else if (emailType === 'verify' && env.EMAILJS_VERIFY_TEMPLATE_ID) {
+    templateId = env.EMAILJS_VERIFY_TEMPLATE_ID;
   }
 
   try {
@@ -22,17 +32,24 @@ async function sendEmail(to, subject, message, env) {
       },
       body: JSON.stringify({
         service_id: env.EMAILJS_SERVICE_ID,
-        template_id: env.EMAILJS_TEMPLATE_ID,
+        template_id: templateId,
         user_id: env.EMAILJS_USER_ID,
+        accessToken: env.EMAILJS_USER_ID, // Some versions need this
         template_params: {
           to_email: to,
+          to_name: to.split('@')[0], // Extract name from email
           subject: subject,
           message: message,
-          from_name: 'JailJogger'
+          from_name: 'JailJogger',
+          reply_to: 'noreply@jailjogger.com'
         }
       }),
     });
 
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('EmailJS error:', response.status, errorText);
+    }
     return response.ok;
   } catch (error) {
     console.error('Email send error:', error);
@@ -167,23 +184,42 @@ async function verifyJWT(token, secret) {
   }
 }
 
-// Hash password function
-async function hashPassword(password, username) {
+// Original API password hashing (base64 with salt)
+async function hashPasswordOriginal(password, salt) {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password + username); // Use username as salt
+  const data = encoder.encode(password + salt);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash)));
+}
+
+// New API password hashing (array with username as salt)
+async function hashPasswordNew(password, username) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + username);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hashBuffer));
 }
 
-// Compare password function
-async function comparePassword(password, username, storedHash) {
-  const newHash = await hashPassword(password, username);
-  if (newHash.length !== storedHash.length) return false;
-  
-  for (let i = 0; i < newHash.length; i++) {
-    if (newHash[i] !== storedHash[i]) return false;
+// Compare password function - handles both old and new formats
+async function comparePassword(password, username, user) {
+  // Check if this is an old format user (has salt property and password is string)
+  if (user.salt && typeof user.password === 'string') {
+    const originalHash = await hashPasswordOriginal(password, user.salt);
+    return originalHash === user.password;
   }
-  return true;
+  
+  // New format (password is array)
+  if (Array.isArray(user.password)) {
+    const newHash = await hashPasswordNew(password, username);
+    if (newHash.length !== user.password.length) return false;
+    
+    for (let i = 0; i < newHash.length; i++) {
+      if (newHash[i] !== user.password[i]) return false;
+    }
+    return true;
+  }
+  
+  return false;
 }
 
 // Main request handler
@@ -220,8 +256,8 @@ export default {
           });
         }
 
-        // Check if user already exists
-        const existingUser = await env.USERS.get(username);
+        // Check if user already exists (check both new and old key formats)
+        const existingUser = await env.USERS.get(username) || await env.USERS.get(`user:${username}`);
         if (existingUser) {
           return new Response(JSON.stringify({
             error: 'Username already exists'
@@ -235,7 +271,7 @@ export default {
         const verificationCode = generatePIN();
         
         // Store pending user (expires in 15 minutes)
-        const hashedPassword = await hashPassword(password, username);
+        const hashedPassword = await hashPasswordNew(password, username);
         const pendingUser = {
           username,
           password: hashedPassword,
@@ -251,7 +287,8 @@ export default {
           email,
           'JailJogger - Verify Your Account',
           getVerificationEmailMessage(verificationCode, username),
-          env
+          env,
+          'verify'
         );
         
         if (!emailSent) {
@@ -325,7 +362,7 @@ export default {
       if (url.pathname === '/api/login' && request.method === 'POST') {
         const { username, password } = await request.json();
         
-        const userData = await env.USERS.get(username);
+        const userData = await env.USERS.get(username) || await env.USERS.get(`user:${username}`);
         if (!userData) {
           return new Response(JSON.stringify({
             error: 'Invalid username or password'
@@ -336,7 +373,7 @@ export default {
         }
 
         const user = JSON.parse(userData);
-        const isValidPassword = await comparePassword(password, username, user.password);
+        const isValidPassword = await comparePassword(password, username, user);
 
         if (!isValidPassword) {
           return new Response(JSON.stringify({
@@ -362,7 +399,7 @@ export default {
       if (url.pathname === '/api/request-pin' && request.method === 'POST') {
         const { username } = await request.json();
         
-        const userData = await env.USERS.get(username);
+        const userData = await env.USERS.get(username) || await env.USERS.get(`user:${username}`);
         if (!userData) {
           return new Response(JSON.stringify({
             error: 'User not found'
@@ -396,7 +433,8 @@ export default {
           user.email,
           'JailJogger - Your Login PIN',
           getPINEmailMessage(pin, username),
-          env
+          env,
+          'pin'
         );
 
         if (!emailSent) {
@@ -458,7 +496,7 @@ export default {
       if (url.pathname === '/api/reset-password' && request.method === 'POST') {
         const { username } = await request.json();
         
-        const userData = await env.USERS.get(username);
+        const userData = await env.USERS.get(username) || await env.USERS.get(`user:${username}`);
         if (!userData) {
           // Don't reveal if user exists for security
           return new Response(JSON.stringify({
@@ -491,7 +529,8 @@ export default {
           user.email,
           'JailJogger - Password Reset Code',
           getPasswordResetEmailMessage(resetCode, username),
-          env
+          env,
+          'reset'
         );
 
         return new Response(JSON.stringify({
@@ -527,9 +566,11 @@ export default {
         }
 
         // Update user password
-        const userData = await env.USERS.get(username);
+        const userData = await env.USERS.get(username) || await env.USERS.get(`user:${username}`);
         const user = JSON.parse(userData);
-        user.password = await hashPassword(newPassword, username);
+        user.password = await hashPasswordNew(newPassword, username);
+        // Remove salt if it exists (converting from old to new format)
+        delete user.salt;
         
         await env.USERS.put(username, JSON.stringify(user));
         await env.RESET_CODES.delete(username);
@@ -558,7 +599,7 @@ export default {
           });
         }
 
-        const userData = await env.USERS.get(username);
+        const userData = await env.USERS.get(username) || await env.USERS.get(`user:${username}`);
         if (!userData) {
           return new Response(JSON.stringify({
             error: 'User not found'
@@ -569,7 +610,7 @@ export default {
         }
 
         const user = JSON.parse(userData);
-        const isValidPassword = await comparePassword(password, username, user.password);
+        const isValidPassword = await comparePassword(password, username, user);
 
         if (!isValidPassword) {
           return new Response(JSON.stringify({

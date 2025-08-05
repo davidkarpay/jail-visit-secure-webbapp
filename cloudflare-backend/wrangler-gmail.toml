@@ -36,4 +36,5 @@ JWT_SECRET = "karpay-jail-visit-secure-jwt-2024-production-key-7x9z"
 # Get these from your EmailJS dashboard at https://emailjs.com
 EMAILJS_SERVICE_ID = "service_c3z3laj"
 EMAILJS_TEMPLATE_ID = "template_u9st7fr"
-EMAILJS_USER_ID = "Jailjogger"
+EMAILJS_USER_ID = "NIPPHGGQHaJuui-ZU"
+EMAILJS_RESET_TEMPLATE_ID = "template_c0wbz6n"
